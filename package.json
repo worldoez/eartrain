@@ -28,7 +28,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "jest",
-    "ts:check": "tsc --noEmit"
+    "ts:check": "tsc --noEmit",
+    "gen-samples": "node scripts/generate-samples.mjs"
   },
   "private": true
 }
