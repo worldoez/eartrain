@@ -1,0 +1,65 @@
+<h2>How should the user answer?</h2>
+<p class="subtitle">In QuickMaths you typed numbers on a keypad. Ear training answers are note names, interval names, chord qualities — so the input is different. Two natural approaches (plus a hybrid). Click the one that feels right.</p>
+
+<div class="options">
+
+  <div class="option" data-choice="buttons" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Multiple-choice buttons</h3>
+      <p>A grid of answer choices. For pitch: 12 note buttons (C, C♯, D…). For intervals: named buttons (m2, M2, m3, M3, P4…). For chords: quality buttons (Major, Minor, Dim, Aug, maj7…). For scales: scale-name buttons. Fast, consistent across every drill, works great on a phone with one thumb.</p>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-header">Pitch drill — answer buttons</div>
+        <div class="mockup-body">
+          <div style="text-align:center;padding:18px;color:var(--text-muted)">▶ Listen to the note</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px">
+            <button class="mock-button">C</button><button class="mock-button">C♯</button><button class="mock-button">D</button><button class="mock-button">D♯</button>
+            <button class="mock-button">E</button><button class="mock-button">F</button><button class="mock-button">F♯</button><button class="mock-button">G</button>
+            <button class="mock-button">G♯</button><button class="mock-button">A</button><button class="mock-button">A♯</button><button class="mock-button">B</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="piano" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>On-screen piano keyboard</h3>
+      <p>Tap the note you heard on a piano. Authentic and intuitive for <em>pitch</em> — but it breaks down for intervals/chords/scales, where the answer is a <em>name</em> ("minor 3rd", "dominant 7th"), not a key. A keyboard can't cleanly express "what chord quality was that?"</p>
+      <div class="mockup" style="margin-top:12px">
+        <div class="mockup-header">Pitch drill — piano keyboard</div>
+        <div class="mockup-body">
+          <div style="text-align:center;padding:18px;color:var(--text-muted)">▶ Listen to the note</div>
+          <div style="position:relative;height:90px;background:#fff;border-radius:6px;overflow:hidden;margin-top:8px">
+            <div style="display:flex;height:100%">
+              <div style="flex:1;border:1px solid #333;background:#fff"></div>
+              <div style="flex:1;border:1px solid #333;background:#fff"></div>
+              <div style="flex:1;border:1px solid #333;background:#fff"></div>
+              <div style="flex:1;border:1px solid #333;background:#fff"></div>
+              <div style="flex:1;border:1px solid #333;background:#fff"></div>
+              <div style="flex:1;border:1px solid #333;background:#fff"></div>
+              <div style="flex:1;border:1px solid #333;background:#fff"></div>
+            </div>
+            <div style="position:absolute;top:0;height:58%;display:flex">
+              <div style="width:28px;background:#000;margin-left:18px"></div>
+              <div style="width:28px;background:#000;margin-left:24px"></div>
+              <div style="width:28px;background:#000;margin-left:50px"></div>
+              <div style="width:28px;background:#000;margin-left:24px"></div>
+              <div style="width:28px;background:#000;margin-left:24px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="hybrid" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Hybrid (recommended)</h3>
+      <p>Piano keyboard for the <strong>pitch</strong> drill (tap the note you heard), and multiple-choice buttons for <strong>intervals, chords, and scales</strong> (pick the correct name). Each drill gets the input that fits its answer type. Slightly more UI to build, but the most natural experience — and the piano doubles as a "replay / explore" aid on the pitch screen.</p>
+    </div>
+  </div>
+
+</div>
