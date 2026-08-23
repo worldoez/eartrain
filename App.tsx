@@ -1,12 +1,18 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AppStateProvider } from './src/context/AppStateContext';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      <AppStateProvider>
+        <View style={styles.container}>
+          <Text>EarTrain</Text>
+          <StatusBar style="auto" />
+        </View>
+      </AppStateProvider>
+    </SafeAreaProvider>
   );
 }
 
