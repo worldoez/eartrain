@@ -16,6 +16,7 @@ interface AppState {
   highScores: HighScores;
   ready: boolean;
   setSettings: (s: Settings) => void;
+  resetMissed: () => void;
   answer: (correct: boolean, item: DrillItem, isTest: boolean, testScore?: { correct: number; total: number }) => void;
   nextItem: () => DrillItem;
 }
@@ -42,6 +43,11 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const setSettings = useCallback((s: Settings) => {
     setSettingsState(s);
     saveSettings(s);
+  }, []);
+
+  const resetMissed = useCallback(() => {
+    setMissedQueue([]);
+    saveMissed([]);
   }, []);
 
   const nextItem = useCallback((): DrillItem => {
@@ -85,7 +91,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   }, [missedQueue, settings]);
 
   return (
-    <Ctx.Provider value={{ settings, missedQueue, history, highScores, ready, setSettings, answer, nextItem }}>
+    <Ctx.Provider value={{ settings, missedQueue, history, highScores, ready, setSettings, resetMissed, answer, nextItem }}>
       {children}
     </Ctx.Provider>
   );
