@@ -1,0 +1,14 @@
+{
+  "name": "EarTrain",
+  "short_name": "EarTrain",
+  "description": "Ear training for musicians: intervals, chords, scales, scale degrees, cadences and pitch.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0d14",
+  "theme_color": "#6d5efc",
+  "icons": [
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
