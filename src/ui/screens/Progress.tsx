@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { audio } from '../../audio/engine';
 import { EXERCISES, EXERCISE_BY_ID } from '../../exercises';
 import { dayKey, dueReviews, mastery, starsFor, weakestItems } from '../../state/progress';
@@ -6,10 +7,13 @@ import { Bar, Stars, TopBar } from '../components/common';
 import { Icon } from '../components/Icon';
 import { go, sessionHref } from '../router';
 
+type Day = { k: string; label: string; answered: number; correct: number };
+
 export function ProgressScreen() {
   const p = useProgress();
   const now = Date.now();
-  const days = Array.from({ length: 14 }, (_, i) => {
+  const [sel, setSel] = useState<Day | null>(null);
+  const days: Day[] = Array.from({ length: 14 }, (_, i) => {
     const t = now - (13 - i) * 864e5;
     const k = dayKey(t);
     return { k, label: new Date(t).toLocaleDateString(undefined, { weekday: 'narrow' }), ...(p.days[k] ?? { answered: 0, correct: 0 }) };
@@ -32,16 +36,26 @@ export function ProgressScreen() {
 
       <section className="card">
         <h3 className="card-title">Last 14 days</h3>
-        <div className="chart" role="img" aria-label="Questions answered per day">
+        <div className="chart">
           {days.map((d) => (
-            <div key={d.k} className="chart-col" title={`${d.k}: ${d.correct}/${d.answered}`}>
+            <button
+              key={d.k}
+              className={`chart-col ${sel?.k === d.k ? 'is-sel' : ''}`}
+              aria-label={`${new Date(d.k).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}: ${d.correct} correct of ${d.answered}`}
+              onClick={() => setSel(d)}
+            >
               <div className="chart-bar" style={{ height: `${(d.answered / max) * 100}%` }}>
                 <div className="chart-bar-good" style={{ height: d.answered ? `${(d.correct / d.answered) * 100}%` : 0 }} />
               </div>
               <span className="chart-label">{d.label}</span>
-            </div>
+            </button>
           ))}
         </div>
+        <p className="muted small chart-readout" aria-live="polite">
+          {sel
+            ? `${new Date(sel.k).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}: ${sel.answered ? `${sel.correct} of ${sel.answered} correct` : 'no practice'}`
+            : 'Tap a day for details'}
+        </p>
         <div className="legend"><span><i className="sw sw-good" /> correct</span><span><i className="sw" /> answered</span></div>
       </section>
 
@@ -78,9 +92,11 @@ export function ProgressScreen() {
                   <span className="skill-list-name"><span className="dot" />{ex.title}</span>
                   <span className="muted small">{cleared}/{ex.levels.length} levels</span>
                   <Bar value={m ?? 0} color="var(--cat)" />
-                  <span className="skill-levels">
-                    {bests.map((b, i) => <Stars key={i} count={b === undefined ? 0 : starsFor(b)} size={9} />)}
-                  </span>
+                  {bests.some((b) => b !== undefined) && (
+                    <span className="skill-levels">
+                      {bests.map((b, i) => <Stars key={i} count={b === undefined ? 0 : starsFor(b)} size={9} />)}
+                    </span>
+                  )}
                 </button>
               </li>
             );

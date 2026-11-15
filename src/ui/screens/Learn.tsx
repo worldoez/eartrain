@@ -182,7 +182,7 @@ export function ExploreScreen() {
       </div>
 
       <div className="explore-piano">
-        <Piano from={48} to={84} labels="c" marks={marks} onPress={(m) => { const r = Math.min(m, 72); setRoot(r); play(r); }} />
+        <Piano scrollable from={48} to={84} labels="c" marks={marks} onPress={(m) => { const r = Math.min(m, 72); setRoot(r); play(r); }} />
         <p className="muted small center">Tap a key to set the root.</p>
       </div>
 

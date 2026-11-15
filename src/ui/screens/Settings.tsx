@@ -34,7 +34,12 @@ export function SettingsScreen() {
 
   const doImport = async (file: File) => {
     try {
-      importData(await file.text());
+      const text = await file.text();
+      const data = JSON.parse(text) as { xp?: number; days?: Record<string, unknown> };
+      const answered = data.days ? Object.values(data.days).reduce((a: number, d) => a + ((d as { answered?: number }).answered ?? 0), 0) : 0;
+      const ok = window.confirm(`Import this backup? It will replace your current progress (${answered} answered, ${data.xp ?? 0} XP backed up).`);
+      if (!ok) return;
+      importData(text);
       setMsg('Backup restored.');
     } catch (e) {
       setMsg(`Couldn’t import: ${(e as Error).message}`);
@@ -72,6 +77,10 @@ export function SettingsScreen() {
           <span>Auto-advance after a correct answer</span>
           <input type="checkbox" className="switch" checked={s.autoAdvance} onChange={(e) => set({ autoAdvance: e.target.checked })} />
         </label>
+        <label className="setting">
+          <span>Answer sounds</span>
+          <input type="checkbox" className="switch" checked={s.cues} onChange={(e) => set({ cues: e.target.checked })} />
+        </label>
       </section>
 
       <section className="card settings">
@@ -93,7 +102,7 @@ export function SettingsScreen() {
         <button className="btn btn-ghost btn-danger" onClick={() => { if (window.confirm('Erase all progress? This can’t be undone.')) { resetProgress(); setMsg('Progress reset.'); } }}>
           Reset all progress
         </button>
-        {msg && <p className="small">{msg}</p>}
+        {msg && <p className="small" aria-live="polite">{msg}</p>}
       </section>
       <p className="muted tiny center">EarTrain v2 · keyboard: 1–9 answer · Space replay · Enter continue</p>
     </div>

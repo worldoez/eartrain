@@ -8,6 +8,7 @@ export interface Settings {
   theme: 'system' | 'light' | 'dark';
   sessionLength: number;
   autoAdvance: boolean;
+  cues: boolean; // short answer sounds after each response
   dailyGoal: number; // questions per day
 }
 
@@ -17,6 +18,7 @@ export const defaultSettings: Settings = {
   theme: 'system',
   sessionLength: 15,
   autoAdvance: true,
+  cues: true,
   dailyGoal: 40,
 };
 

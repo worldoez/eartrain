@@ -50,3 +50,15 @@ export function after(a: Clip, b: Clip, gap = 0.5): Clip {
     length: offset + b.length,
   };
 }
+
+// Tiny answer cues, fired up to 30× per session: kept quick and quiet so they
+// read as ear candy, not fanfare. Rising third for a hit, soft low tone for a miss.
+export function cueGood(): Clip {
+  const clip = sequence([84, 88], 0.09, 0.12);
+  return { events: clip.events.map((e) => ({ ...e, vel: 0.45 })), length: clip.length };
+}
+
+export function cueBad(): Clip {
+  const clip = single(52, 0.2);
+  return { events: clip.events.map((e) => ({ ...e, vel: 0.3 })), length: clip.length };
+}

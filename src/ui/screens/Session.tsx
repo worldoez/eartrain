@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { audio } from '../../audio/engine';
+import { cueGood, cueBad } from '../../audio/events';
 import { EXERCISES, EXERCISE_BY_ID, levelConfig, reviewConfig } from '../../exercises';
 import { pick } from '../../exercises/random';
 import type { ExerciseConfig, ExerciseDef, Question } from '../../exercises/types';
@@ -126,7 +127,9 @@ function SessionPlayer({ source, lessonId, onRestart }: { source: Source; lesson
   const [results, setResults] = useState<Result[]>([]);
   const [combo, setCombo] = useState(0);
   const [needsTap, setNeedsTap] = useState(() => !audio.unlocked);
+  const [confirmExit, setConfirmExit] = useState(false);
   const [done, setDone] = useState(false);
+  const [lessonDone, setLessonDone] = useState(false);
   const startedAt = useRef(Date.now());
   const xpStart = useRef(getProgress().xp);
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -143,8 +146,9 @@ function SessionPlayer({ source, lessonId, onRestart }: { source: Source; lesson
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
   }, []);
 
-  const finish = (all: Result[]) => {
+  const finish = (all: Result[], completed = true) => {
     audio.stop();
+    if (advanceTimer.current) { clearTimeout(advanceTimer.current); advanceTimer.current = null; }
     const correct = all.filter((r) => r.correct).length;
     updateProgress((p) => {
       let next = recordSession(p, {
@@ -155,9 +159,10 @@ function SessionPlayer({ source, lessonId, onRestart }: { source: Source; lesson
         correct,
         seconds: Math.round((Date.now() - startedAt.current) / 1000),
       });
-      if (lessonId && !next.lessonsDone.includes(lessonId)) next = { ...next, lessonsDone: [...next.lessonsDone, lessonId] };
+      if (lessonId && completed && !next.lessonsDone.includes(lessonId)) next = { ...next, lessonsDone: [...next.lessonsDone, lessonId] };
       return next;
     });
+    setLessonDone(lessonId != null && completed);
     setDone(true);
   };
 
@@ -181,7 +186,9 @@ function SessionPlayer({ source, lessonId, onRestart }: { source: Source; lesson
     setResults(all);
     setCombo((c) => (correct ? c + 1 : 0));
     updateProgress((p) => recordAnswer(p, q.exerciseId, q.item, correct, Date.now(), source.key === 'review'));
+    if (settings.cues) void audio.play(correct ? cueGood() : cueBad());
     if (correct && settings.autoAdvance) {
+      // Long enough to read the explanation before the next question slides in.
       advanceTimer.current = setTimeout(() => {
         advanceTimer.current = null;
         if (index + 1 >= source.total) finish(all);
@@ -190,21 +197,30 @@ function SessionPlayer({ source, lessonId, onRestart }: { source: Source; lesson
           setPicked(null);
           setQ(source.next(q));
         }
-      }, 850);
+      }, q.explain ? 2400 : 900);
     }
   };
 
+  // The orb always replays the question from the top — that's what an ear needs.
   const replay = () => {
-    if (playing) audio.stop();
-    else void audio.play(q.clip);
+    void audio.play(q.clip);
   };
 
-  // Keyboard: 1–9 answer, Space replays, Enter continues.
+  const exit = () => {
+    // Leaving early: never silently discard answered questions (and don't credit
+    // the lesson check — it wasn't finished).
+    if (results.length > 0) finish(results, false);
+    else back();
+  };
+
+  // Keyboard: 1–9 answer, Space replays, Enter continues. Space/Enter defer to a
+  // focused control (chip, Continue button) so in-page activation still wins.
   const handlers = useRef({ answer, next, replay });
   handlers.current = { answer, next, replay };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement) return;
+      const t = e.target;
+      if (t instanceof HTMLElement && (t.matches('input, textarea, select') || (t.closest('button, a, [role="tab"]') && (e.key === ' ' || e.key === 'Enter')))) return;
       if (e.key === ' ') { e.preventDefault(); handlers.current.replay(); return; }
       if (e.key === 'Enter') { e.preventDefault(); if (picked) handlers.current.next(); return; }
       const d = Number(e.key);
@@ -215,7 +231,7 @@ function SessionPlayer({ source, lessonId, onRestart }: { source: Source; lesson
   }, [q, picked]);
 
   if (done) {
-    return <Summary source={source} results={results} xp={getProgress().xp - xpStart.current} lessonId={lessonId} onRestart={onRestart} />;
+    return <Summary source={source} results={results} xp={getProgress().xp - xpStart.current} lessonId={lessonDone ? lessonId : null} onRestart={onRestart} />;
   }
 
   const ex = EXERCISE_BY_ID[q.exerciseId];
@@ -232,27 +248,28 @@ function SessionPlayer({ source, lessonId, onRestart }: { source: Source; lesson
   return (
     <div className={`session cat-${ex.category}`}>
       <div className="session-top">
-        <button className="icon-btn" aria-label="End session" onClick={() => back()}><Icon name="x" /></button>
-        <div className="session-progress" role="progressbar" aria-valuenow={index + (picked ? 1 : 0)} aria-valuemax={source.total}>
+        <button className="icon-btn" aria-label="End session" onClick={() => setConfirmExit(true)}><Icon name="x" /></button>
+        <div className="session-progress" role="progressbar" aria-valuenow={index + (picked ? 1 : 0)} aria-valuemin={0} aria-valuemax={source.total}>
           <div style={{ width: `${((index + (picked ? 1 : 0)) / source.total) * 100}%` }} />
         </div>
-        <div className={`combo ${combo >= 3 ? 'is-on' : ''}`} aria-label={`Streak ${combo}`}>
+        <div className={`combo ${combo >= 3 ? 'is-on' : ''}`} aria-label={`Streak ${combo}`} style={{ visibility: combo >= 2 ? 'visible' : 'hidden' }}>
           <Icon name="flame" size={18} fill /> {combo}
         </div>
       </div>
 
-      <div className="session-body">
+      <div className="session-body" inert={needsTap ? true : undefined}>
         <div className="session-kicker">{source.key === 'mix' || source.key === 'review' ? `${source.title} · ${ex.title}` : ex.title} · {index + 1} of {source.total}</div>
         <h2 className="session-prompt">{q.prompt}</h2>
 
-        <button className={`orb ${playing ? 'is-playing' : ''}`} onClick={replay} aria-label={playing ? 'Stop' : 'Play again'}>
+        <button className={`orb ${playing ? 'is-playing' : ''}`} onClick={replay} aria-label="Play again">
           <span className="orb-ring" /><span className="orb-ring r2" />
-          <Icon name={playing ? 'stop' : 'play'} size={34} fill />
+          <Icon name="play" size={34} fill />
         </button>
-        <div className="session-tools">
-          <button className="chip" onClick={() => void audio.play(q.clip)}><Icon name="replay" size={16} /> Replay</button>
-          {q.contextClip && <button className="chip" onClick={() => void audio.play(q.contextClip!)}><Icon name="sound" size={16} /> Hear the key</button>}
-        </div>
+        {q.contextClip && (
+          <div className="session-tools">
+            <button className="chip" onClick={() => void audio.play(q.contextClip!)}><Icon name="sound" size={16} /> Hear the key</button>
+          </div>
+        )}
 
         {q.input === 'piano' ? (
           <div className="session-piano">
@@ -303,8 +320,23 @@ function SessionPlayer({ source, lessonId, onRestart }: { source: Source; lesson
         </div>
       )}
 
+      {confirmExit && (
+        <div className="tap-overlay" role="alertdialog" aria-modal="true" aria-label="End session?">
+          <h2>End session?</h2>
+          <p className="muted small center">
+            {results.length > 0
+              ? <>Your {results.length} answer{results.length === 1 ? '' : 's'} so far will still count.</>
+              : 'You haven’t answered anything yet — nothing will be saved.'}
+          </p>
+          <div className="summary-actions">
+            <button className="btn btn-primary btn-block" onClick={() => setConfirmExit(false)}>Keep going</button>
+            <button className="btn btn-ghost btn-block" onClick={exit}>End session</button>
+          </div>
+        </div>
+      )}
+
       {needsTap && (
-        <div className="tap-overlay">
+        <div className="tap-overlay" role="dialog" aria-modal="true" aria-label="Tap to start the session">
           <button className="btn btn-primary btn-lg" onClick={() => { audio.unlock(); setNeedsTap(false); }}>
             <Icon name="play" size={18} fill /> Start
           </button>
@@ -319,6 +351,7 @@ function Summary({ source, results, xp, lessonId, onRestart }: { source: Source;
   const correct = results.filter((r) => r.correct).length;
   const pct = results.length ? Math.round((correct / results.length) * 100) : 0;
   const stars = starsFor(pct);
+  const ringColor = pct >= 75 ? 'var(--good)' : pct >= 50 ? 'var(--warn)' : 'var(--bad)';
   const byItem = new Map<string, { exerciseId: string; item: string; n: number; c: number }>();
   for (const r of results) {
     const k = `${r.exerciseId}:${r.item}`;
@@ -335,10 +368,12 @@ function Summary({ source, results, xp, lessonId, onRestart }: { source: Source;
   return (
     <div className="screen summary">
       <div className="summary-hero">
-        <ProgressRing value={pct / 100} size={150} stroke={12} color={pct >= 75 ? 'var(--good)' : pct >= 50 ? 'var(--warn)' : 'var(--bad)'}>
-          <div className="summary-pct">{pct}%</div>
-          <div className="muted small">{correct} / {results.length}</div>
-        </ProgressRing>
+        <div className="summary-ring" style={{ '--ring-c': ringColor } as CSSProperties}>
+          <ProgressRing value={pct / 100} size={150} stroke={12} color={ringColor}>
+            <div className="summary-pct">{pct}%</div>
+            <div className="muted small">{correct} / {results.length}</div>
+          </ProgressRing>
+        </div>
         <Stars count={stars} size={28} />
         <h2>{message}</h2>
         <div className="summary-xp"><Icon name="bolt" size={16} fill /> +{xp} XP</div>

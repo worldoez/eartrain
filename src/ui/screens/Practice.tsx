@@ -14,7 +14,7 @@ export function PracticeScreen() {
   return (
     <div className="screen">
       <TopBar title="Practice" />
-      <button className="card card-row card-click mix-card" onClick={() => { audio.unlock(); go(sessionHref({ mode: 'mix' })); }}>
+      <button className="card card-row card-click" onClick={() => { audio.unlock(); go(sessionHref({ mode: 'mix' })); }}>
         <span className="card-icon"><Icon name="shuffle" /></span>
         <span className="card-row-body">
           <strong>Daily mix</strong>
@@ -84,9 +84,9 @@ export function ExerciseScreen({ id }: { id: string }) {
         </button>
       )}
 
-      <div className="segmented" role="tablist">
-        <button role="tab" aria-selected={tab === 'levels'} className={tab === 'levels' ? 'is-active' : ''} onClick={() => setTab('levels')}>Levels</button>
-        <button role="tab" aria-selected={tab === 'custom'} className={tab === 'custom' ? 'is-active' : ''} onClick={() => setTab('custom')}><Icon name="sliders" size={16} /> Custom</button>
+      <div className="segmented">
+        <button aria-pressed={tab === 'levels'} className={tab === 'levels' ? 'is-active' : ''} onClick={() => setTab('levels')}>Levels</button>
+        <button aria-pressed={tab === 'custom'} className={tab === 'custom' ? 'is-active' : ''} onClick={() => setTab('custom')}><Icon name="sliders" size={16} /> Custom</button>
       </div>
 
       {tab === 'levels' ? (
